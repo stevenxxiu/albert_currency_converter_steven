@@ -1,9 +1,13 @@
 import io
+import json
 import urllib.request
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Dict
 from xml.etree import ElementTree as ET
 
-from albert import Action, Item, Query, QueryHandler, setClipboardText  # pylint: disable=import-error
+from albert import Action, Item, Query, QueryHandler, configLocation, setClipboardText  # pylint: disable=import-error
 
 
 md_iid = '0.5'
@@ -61,6 +65,11 @@ european_central_bank = EuropeanCentralBank()
 
 
 class Plugin(QueryHandler):
+    def __init__(self):
+        super().__init__()
+        # `{ alias: currency_name }`
+        self.aliases: Dict[str, str] = {}
+
     def id(self) -> str:
         return __name__
 
@@ -70,18 +79,35 @@ class Plugin(QueryHandler):
     def description(self) -> str:
         return md_description
 
+    def initialize(self) -> None:
+        with suppress(FileNotFoundError):
+            with (Path(configLocation()) / __name__ / 'settings.json').open() as sr:
+                settings = json.load(sr)
+
+            if 'aliases' in settings:
+                for currency_name, aliases in settings['aliases'].items():
+                    for alias in aliases:
+                        self.aliases[alias.lower()] = currency_name.upper()
+
     def defaultTrigger(self) -> str:
         return f'{TRIGGER} '
 
     def synopsis(self) -> str:
         return '<amount> <src_currency> <dest_currency>'
 
+    def get_alias(self, currency_name: str) -> str:
+        # Lower case first, as aliases are in lower case
+        currency_name = currency_name.lower()
+        currency_name = self.aliases.get(currency_name, currency_name)
+        # Currencies are in upper case
+        return currency_name.upper()
+
     def handleQuery(self, query: Query) -> None:
         try:
             src_amount, src_currency, dest_currency = query.string.split()[:3]
             src_amount = float(src_amount)
-            src_currency = src_currency.upper()
-            dest_currency = dest_currency.upper()
+            src_currency = self.get_alias(src_currency)
+            dest_currency = self.get_alias(dest_currency)
         except ValueError:
             return
 
