@@ -4,7 +4,7 @@ import urllib.request
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 from xml.etree import ElementTree as ET
 
 from albert import Action, Item, Query, QueryHandler, configLocation, setClipboardText  # pylint: disable=import-error
@@ -69,6 +69,8 @@ class Plugin(QueryHandler):
         super().__init__()
         # `{ alias: currency_name }`
         self.aliases: Dict[str, str] = {}
+        # `[currency_name]`
+        self.defaults_dests: List[str] = []
 
     def id(self) -> str:
         return __name__
@@ -88,12 +90,14 @@ class Plugin(QueryHandler):
                 for currency_name, aliases in settings['aliases'].items():
                     for alias in aliases:
                         self.aliases[alias.lower()] = currency_name.upper()
+            if 'defaults' in settings:
+                self.defaults_dests = settings['defaults']
 
     def defaultTrigger(self) -> str:
         return f'{TRIGGER} '
 
     def synopsis(self) -> str:
-        return '<amount> <src> <dest>'
+        return '<amount> <src> [<dest>]'
 
     def get_alias(self, currency_name: str) -> str:
         # Lower case first, as aliases are in lower case
@@ -102,15 +106,8 @@ class Plugin(QueryHandler):
         # Currencies are in upper case
         return currency_name.upper()
 
-    def handleQuery(self, query: Query) -> None:
-        try:
-            src_amount, src_currency, dest_currency = query.string.split()[:3]
-            src_amount = float(src_amount)
-            src_currency = self.get_alias(src_currency)
-            dest_currency = self.get_alias(dest_currency)
-        except ValueError:
-            return
-
+    @staticmethod
+    def add_item(query: Query, src_amount: float, src_currency: str, dest_currency: str) -> None:
         try:
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
             dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
@@ -125,3 +122,28 @@ class Plugin(QueryHandler):
             )
         except ValueError:
             return
+
+    def handleQuery(self, query: Query) -> None:
+        try:
+            parts = query.string.split()
+            match len(parts):
+                case 2:
+                    src_amount, src_currency = parts
+                    dest_currency = None
+                case 3:
+                    src_amount, src_currency, dest_currency = parts
+                case _:
+                    raise ValueError
+            src_amount = float(src_amount)
+            src_currency = self.get_alias(src_currency)
+            if dest_currency is not None:
+                dest_currency = self.get_alias(dest_currency)
+        except ValueError:
+            return
+
+        if dest_currency is not None:
+            self.add_item(query, src_amount, src_currency, dest_currency)
+        else:
+            for dest_currency in self.defaults_dests:
+                if dest_currency != src_currency:
+                    self.add_item(query, src_amount, src_currency, dest_currency)

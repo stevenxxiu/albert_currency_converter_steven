@@ -5,7 +5,9 @@ To install, copy or symlink this directory to `~/.local/share/albert/org.albert.
 ## Config
 Config is stored in `~/.config/albert/albert.currency_converter_steven/settings.json`.
 
-Aliases are supported. As an example:
+Aliases are supported. These are case-insensitive.
+
+Example config:
 
 ```json
 {
@@ -16,11 +18,10 @@ Aliases are supported. As an example:
     "GBP": ["uk", "pound"],
     "CNY": ["cn", "rmb"],
     "JPY": ["ja", "jp", "yen"]
-  }
+  },
+  "defaults": ["USD", "EUR", "AUD", "GBP", "CNY", "JPY"]
 }
 ```
-
-These are case-insensitive.
 
 ## Development Setup
 To setup the project for development, run:
