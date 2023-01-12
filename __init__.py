@@ -93,7 +93,7 @@ class Plugin(QueryHandler):
         return f'{TRIGGER} '
 
     def synopsis(self) -> str:
-        return '<amount> <src_currency> <dest_currency>'
+        return '<amount> <src> <dest>'
 
     def get_alias(self, currency_name: str) -> str:
         # Lower case first, as aliases are in lower case
