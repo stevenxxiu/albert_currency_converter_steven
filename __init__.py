@@ -87,7 +87,7 @@ class Plugin(QueryHandler):
 
         try:
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
-            dest_amount_str = f'{dest_amount:.2f}'
+            dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
             query.add(
                 Item(
                     id=md_name,
