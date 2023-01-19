@@ -4,7 +4,6 @@ import urllib.request
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List
 from xml.etree import ElementTree as ET
 
 from albert import Action, Item, Query, QueryHandler, configLocation, setClipboardText  # pylint: disable=import-error
@@ -68,9 +67,9 @@ class Plugin(QueryHandler):
     def __init__(self):
         super().__init__()
         # `{ alias: currency_name }`
-        self.aliases: Dict[str, str] = {}
+        self.aliases: dict[str, str] = {}
         # `[currency_name]`
-        self.defaults_dests: List[str] = []
+        self.defaults_dests: list[str] = []
 
     def id(self) -> str:
         return __name__
