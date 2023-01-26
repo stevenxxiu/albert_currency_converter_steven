@@ -12,7 +12,7 @@ from albert import Action, Item, Query, QueryHandler, configLocation, setClipboa
 md_iid = '0.5'
 md_version = '1.0'
 md_name = 'Currency Converter Steven'
-md_description = 'Convert currencies.'
+md_description = 'Convert currencies'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
 md_maintainers = '@stevenxxiu'
 
