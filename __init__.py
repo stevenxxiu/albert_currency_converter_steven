@@ -24,7 +24,7 @@ class EuropeanCentralBank:
     URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'
     CACHE_TIME = timedelta(hours=3)
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.last_update: datetime = datetime.fromtimestamp(0, timezone.utc)
         self.euro_to_currency: dict[str, float] = {}
 
@@ -64,7 +64,7 @@ european_central_bank = EuropeanCentralBank()
 
 
 class Plugin(QueryHandler):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # `{ alias: currency_name }`
         self.aliases: dict[str, str] = {}
