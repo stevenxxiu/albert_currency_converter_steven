@@ -16,7 +16,6 @@ md_description = 'Convert currencies'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
 md_maintainers = '@stevenxxiu'
 
-TRIGGER = 'cc'
 ICON_PATH = '/usr/share/icons/elementary/apps/128/accessories-calculator.svg'
 
 
@@ -93,7 +92,7 @@ class Plugin(QueryHandler):
                 self.defaults_dests = settings['defaults']
 
     def defaultTrigger(self) -> str:
-        return f'{TRIGGER} '
+        return 'cc '
 
     def synopsis(self) -> str:
         return '<amount> <src> [<dest>]'
