@@ -1,4 +1,6 @@
 # Albert Launcher Currency Converter Extension
+Convert currencies.
+
 ## Install
 To install, copy or symlink this directory to `~/.local/share/albert/org.albert.extension.python/modules/currency_converter_steven/`.
 
