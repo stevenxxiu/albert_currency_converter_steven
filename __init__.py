@@ -2,7 +2,7 @@ import io
 import json
 import urllib.request
 from contextlib import suppress
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -24,11 +24,11 @@ class EuropeanCentralBank:
     CACHE_TIME = timedelta(hours=3)
 
     def __init__(self) -> None:
-        self.last_update: datetime = datetime.fromtimestamp(0, timezone.utc)
+        self.last_update: datetime = datetime.fromtimestamp(0, UTC)
         self.euro_to_currency: dict[str, float] = {}
 
     def update_exchange_rates(self) -> None:
-        cur_time = datetime.now(timezone.utc)
+        cur_time = datetime.now(UTC)
         if cur_time - self.last_update <= self.CACHE_TIME:
             return
 
@@ -48,7 +48,7 @@ class EuropeanCentralBank:
             for leaf in root.findall(f'./{{{namespace}}}Cube/{{{namespace}}}Cube/{{{namespace}}}Cube'):
                 self.euro_to_currency[leaf.attrib['currency']] = float(leaf.attrib['rate'])
 
-        self.last_update = datetime.now(timezone.utc)
+        self.last_update = datetime.now(UTC)
 
     def get_amount_in_dest_currency(self, src_amount: float, src_currency: str, dest_currency: str) -> float:
         self.update_exchange_rates()
