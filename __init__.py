@@ -6,11 +6,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from albert import Action, Item, Query, QueryHandler, configLocation, setClipboardText  # pylint: disable=import-error
+from albert import Action, Item, TriggerQuery, TriggerQueryHandler, setClipboardText  # pylint: disable=import-error
 
 
-md_iid = '0.5'
-md_version = '1.0'
+md_iid = '1.0'
+md_version = '1.1'
 md_name = 'Currency Converter Steven'
 md_description = 'Convert currencies'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
@@ -62,7 +62,7 @@ class EuropeanCentralBank:
 european_central_bank = EuropeanCentralBank()
 
 
-class Plugin(QueryHandler):
+class Plugin(TriggerQueryHandler):
     def __init__(self) -> None:
         super().__init__()
         # `{ alias: currency_name }`
@@ -81,7 +81,7 @@ class Plugin(QueryHandler):
 
     def initialize(self) -> None:
         with suppress(FileNotFoundError):
-            with (Path(configLocation()) / __name__ / 'settings.json').open() as sr:
+            with (Path(self.configLocation()) / 'settings.json').open() as sr:
                 settings = json.load(sr)
 
             if 'aliases' in settings:
@@ -105,7 +105,7 @@ class Plugin(QueryHandler):
         return currency_name.upper()
 
     @staticmethod
-    def add_item(query: Query, src_amount: float, src_currency: str, dest_currency: str) -> None:
+    def add_item(query: TriggerQuery, src_amount: float, src_currency: str, dest_currency: str) -> None:
         try:
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
             dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
@@ -121,7 +121,7 @@ class Plugin(QueryHandler):
         except ValueError:
             return
 
-    def handleQuery(self, query: Query) -> None:
+    def handleTriggerQuery(self, query: TriggerQuery) -> None:
         try:
             parts = query.string.split()
             match len(parts):
