@@ -3,20 +3,26 @@ import json
 import urllib.request
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from albert import Action, Item, TriggerQuery, TriggerQueryHandler, setClipboardText  # pylint: disable=import-error
+from albert import (  # pylint: disable=import-error
+    Action,
+    PluginInstance,
+    StandardItem,
+    TriggerQuery,
+    TriggerQueryHandler,
+    setClipboardText,
+)
 
 
-md_iid = '1.0'
-md_version = '1.1'
+md_iid = '2.0'
+md_version = '1.2'
 md_name = 'Currency Converter Steven'
 md_description = 'Convert currencies'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
 md_maintainers = '@stevenxxiu'
 
-ICON_PATH = '/usr/share/icons/elementary/apps/128/accessories-calculator.svg'
+ICON_URL = 'file:/usr/share/icons/elementary/apps/128/accessories-calculator.svg'
 
 
 class EuropeanCentralBank:
@@ -62,26 +68,25 @@ class EuropeanCentralBank:
 european_central_bank = EuropeanCentralBank()
 
 
-class Plugin(TriggerQueryHandler):
+class Plugin(PluginInstance, TriggerQueryHandler):
     def __init__(self) -> None:
-        super().__init__()
+        TriggerQueryHandler.__init__(
+            self,
+            id=__name__,
+            name=md_name,
+            description=md_description,
+            synopsis='<amount> <src> [<dest>]',
+            defaultTrigger='cc ',
+        )
+        PluginInstance.__init__(self, extensions=[self])
         # `{ alias: currency_name }`
         self.aliases: dict[str, str] = {}
         # `[currency_name]`
         self.defaults_dests: list[str] = []
 
-    def id(self) -> str:
-        return __name__
-
-    def name(self) -> str:
-        return md_name
-
-    def description(self) -> str:
-        return md_description
-
     def initialize(self) -> None:
         with suppress(FileNotFoundError):
-            with (Path(self.configLocation()) / 'settings.json').open() as sr:
+            with (self.configLocation / 'settings.json').open() as sr:
                 settings = json.load(sr)
 
             if 'aliases' in settings:
@@ -90,12 +95,6 @@ class Plugin(TriggerQueryHandler):
                         self.aliases[alias.lower()] = currency_name.upper()
             if 'defaults' in settings:
                 self.defaults_dests = settings['defaults']
-
-    def defaultTrigger(self) -> str:
-        return 'cc '
-
-    def synopsis(self) -> str:
-        return '<amount> <src> [<dest>]'
 
     def get_alias(self, currency_name: str) -> str:
         # Lower case first, as aliases are in lower case
@@ -110,11 +109,11 @@ class Plugin(TriggerQueryHandler):
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
             dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
             query.add(
-                Item(
+                StandardItem(
                     id=md_name,
                     text=dest_amount_str,
                     subtext=f'Value of {src_amount:.2f} {src_currency} in {dest_currency}',
-                    icon=[ICON_PATH],
+                    iconUrls=[ICON_URL],
                     actions=[Action(md_name, md_name, lambda: setClipboardText(dest_amount_str))],
                 )
             )
