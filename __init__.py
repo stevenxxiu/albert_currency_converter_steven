@@ -9,14 +9,13 @@ from albert import (  # pylint: disable=import-error
     Action,
     PluginInstance,
     StandardItem,
-    TriggerQuery,
     TriggerQueryHandler,
     setClipboardText,
 )
 
 
-md_iid = '2.0'
-md_version = '1.2'
+md_iid = '2.3'
+md_version = '1.3'
 md_name = 'Currency Converter Steven'
 md_description = 'Convert currencies'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
@@ -78,13 +77,12 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             synopsis='<amount> <src> [<dest>]',
             defaultTrigger='cc ',
         )
-        PluginInstance.__init__(self, extensions=[self])
+        PluginInstance.__init__(self)
         # `{ alias: currency_name }`
         self.aliases: dict[str, str] = {}
         # `[currency_name]`
         self.defaults_dests: list[str] = []
 
-    def initialize(self) -> None:
         with suppress(FileNotFoundError):
             with (self.configLocation / 'settings.json').open() as sr:
                 settings = json.load(sr)
@@ -104,7 +102,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         return currency_name.upper()
 
     @staticmethod
-    def add_item(query: TriggerQuery, src_amount: float, src_currency: str, dest_currency: str) -> None:
+    def add_item(query, src_amount: float, src_currency: str, dest_currency: str) -> None:
         try:
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
             dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
@@ -118,9 +116,9 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 )
             )
         except ValueError:
-            return
+            pass
 
-    def handleTriggerQuery(self, query: TriggerQuery) -> None:
+    def handleTriggerQuery(self, query) -> None:
         try:
             parts = query.string.split()
             match len(parts):
