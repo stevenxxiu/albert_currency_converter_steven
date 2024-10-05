@@ -2,7 +2,7 @@
 Convert currencies.
 
 ## Install
-To install, copy or symlink this directory to `~/.local/share/albert/org.albert.extension.python/modules/currency_converter_steven/`.
+To install, copy or symlink this directory to `~/.local/share/albert/python/plugins/currency_converter_steven/`.
 
 ## Config
 Config is stored in `~/.config/albert/albert.currency_converter_steven/settings.json`.
