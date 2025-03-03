@@ -5,7 +5,7 @@ from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from xml.etree import ElementTree as ET
 
-from albert import (  # pylint: disable=import-error
+from albert import (
     Action,
     PluginInstance,
     StandardItem,
@@ -13,13 +13,13 @@ from albert import (  # pylint: disable=import-error
     setClipboardText,
 )
 
-
-md_iid = '2.3'
-md_version = '1.3'
+md_iid = '3.0'
+md_version = '1.4'
 md_name = 'Currency Converter Steven'
 md_description = 'Convert currencies'
+md_license = 'MIT'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
-md_maintainers = '@stevenxxiu'
+md_authors = ['@stevenxxiu']
 
 ICON_URL = 'file:/usr/share/icons/elementary/apps/128/accessories-calculator.svg'
 
@@ -69,22 +69,15 @@ european_central_bank = EuropeanCentralBank()
 
 class Plugin(PluginInstance, TriggerQueryHandler):
     def __init__(self) -> None:
-        TriggerQueryHandler.__init__(
-            self,
-            id=__name__,
-            name=md_name,
-            description=md_description,
-            synopsis='<amount> <src> [<dest>]',
-            defaultTrigger='cc ',
-        )
         PluginInstance.__init__(self)
+        TriggerQueryHandler.__init__(self)
         # `{ alias: currency_name }`
         self.aliases: dict[str, str] = {}
         # `[currency_name]`
         self.defaults_dests: list[str] = []
 
         with suppress(FileNotFoundError):
-            with (self.configLocation / 'settings.json').open() as sr:
+            with (self.configLocation() / 'settings.json').open() as sr:
                 settings = json.load(sr)
 
             if 'aliases' in settings:
@@ -93,6 +86,12 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                         self.aliases[alias.lower()] = currency_name.upper()
             if 'defaults' in settings:
                 self.defaults_dests = settings['defaults']
+
+    def synopsis(self, _query: str) -> str:
+        return '<amount> <src> [<dest>]'
+
+    def defaultTrigger(self):
+        return 'cc '
 
     def get_alias(self, currency_name: str) -> str:
         # Lower case first, as aliases are in lower case
