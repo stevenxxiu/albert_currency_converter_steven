@@ -3,15 +3,20 @@ import json
 import urllib.request
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
+from http.client import HTTPResponse
+from typing import Callable, TypedDict, override
 from xml.etree import ElementTree as ET
 
+from albert import setClipboardText  # pyright: ignore[reportUnknownVariableType]
 from albert import (
     Action,
     PluginInstance,
+    Query,
     StandardItem,
     TriggerQueryHandler,
-    setClipboardText,
 )
+
+setClipboardText: Callable[[str], None]
 
 md_iid = '3.0'
 md_version = '1.4'
@@ -25,8 +30,8 @@ ICON_URL = 'file:/usr/share/icons/elementary/apps/128/accessories-calculator.svg
 
 
 class EuropeanCentralBank:
-    URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'
-    CACHE_TIME = timedelta(hours=3)
+    URL: str = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'
+    CACHE_TIME: timedelta = timedelta(hours=3)
 
     def __init__(self) -> None:
         self.last_update: datetime = datetime.fromtimestamp(0, UTC)
@@ -40,12 +45,14 @@ class EuropeanCentralBank:
         self.euro_to_currency.clear()
         self.euro_to_currency['EUR'] = 1.0
 
-        with urllib.request.urlopen(EuropeanCentralBank.URL) as response:
+        with urllib.request.urlopen(EuropeanCentralBank.URL) as response:  # pyright: ignore[reportAny]
+            assert isinstance(response, HTTPResponse)
             response_bytes = response.read()
 
-            namespaces = {
+            namespaces: dict[str, ET.Element[str]] = {
                 prefix: namespace
                 for _, (prefix, namespace) in ET.iterparse(io.BytesIO(response_bytes), events=['start-ns'])
+                if isinstance(prefix, str)
             }
             namespace = namespaces['']
 
@@ -67,6 +74,11 @@ class EuropeanCentralBank:
 european_central_bank = EuropeanCentralBank()
 
 
+class CurrencyConverterSettings(TypedDict):
+    aliases: dict[str, list[str]]
+    defaults: list[str]
+
+
 class Plugin(PluginInstance, TriggerQueryHandler):
     def __init__(self) -> None:
         PluginInstance.__init__(self)
@@ -78,7 +90,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
 
         with suppress(FileNotFoundError):
             with (self.configLocation() / 'settings.json').open() as sr:
-                settings = json.load(sr)
+                settings: CurrencyConverterSettings = json.load(sr)  # pyright: ignore[reportAny]
 
             if 'aliases' in settings:
                 for currency_name, aliases in settings['aliases'].items():
@@ -87,9 +99,11 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             if 'defaults' in settings:
                 self.defaults_dests = settings['defaults']
 
+    @override
     def synopsis(self, _query: str) -> str:
         return '<amount> <src> [<dest>]'
 
+    @override
     def defaultTrigger(self):
         return 'cc '
 
@@ -101,11 +115,11 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         return currency_name.upper()
 
     @staticmethod
-    def add_item(query, src_amount: float, src_currency: str, dest_currency: str) -> None:
+    def add_item(query: Query, src_amount: float, src_currency: str, dest_currency: str) -> None:
         try:
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
             dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
-            query.add(
+            query.add(  # pyright: ignore[reportUnknownMemberType]
                 StandardItem(
                     id=md_name,
                     text=dest_amount_str,
@@ -117,7 +131,8 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         except ValueError:
             pass
 
-    def handleTriggerQuery(self, query) -> None:
+    @override
+    def handleTriggerQuery(self, query: Query) -> None:
         try:
             parts = query.string.split()
             match len(parts):
