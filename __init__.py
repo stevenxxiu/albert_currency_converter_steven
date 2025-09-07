@@ -4,6 +4,7 @@ import urllib.request
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from http.client import HTTPResponse
+from pathlib import Path
 from typing import Callable, TypedDict, override
 from xml.etree import ElementTree as ET
 
@@ -26,7 +27,7 @@ md_license = 'MIT'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
 md_authors = ['@stevenxxiu']
 
-ICON_URL = 'file:/usr/share/icons/elementary/apps/128/accessories-calculator.svg'
+ICON_URL = f'file:{Path(__file__).parent / "icons/currency.svg"}'
 
 
 class EuropeanCentralBank:
