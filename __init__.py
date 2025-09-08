@@ -11,6 +11,7 @@ from xml.etree import ElementTree as ET
 from albert import setClipboardText  # pyright: ignore[reportUnknownVariableType]
 from albert import (
     Action,
+    Item,
     PluginInstance,
     Query,
     StandardItem,
@@ -115,19 +116,16 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         # Currencies are in upper case
         return currency_name.upper()
 
-    @staticmethod
-    def add_item(query: Query, src_amount: float, src_currency: str, dest_currency: str) -> None:
+    def create_item(self, src_amount: float, src_currency: str, dest_currency: str) -> Item | None:
         try:
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
             dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
-            query.add(  # pyright: ignore[reportUnknownMemberType]
-                StandardItem(
-                    id=md_name,
-                    text=dest_amount_str,
-                    subtext=f'Value of {src_amount:.2f} {src_currency} in {dest_currency}',
-                    iconUrls=[ICON_URL],
-                    actions=[Action(md_name, md_name, lambda: setClipboardText(dest_amount_str))],
-                )
+            return StandardItem(
+                id=self.id(),
+                text=dest_amount_str,
+                subtext=f'Value of {src_amount:.2f} {src_currency} in {dest_currency}',
+                iconUrls=[ICON_URL],
+                actions=[Action(md_name, md_name, lambda: setClipboardText(dest_amount_str))],
             )
         except ValueError:
             pass
@@ -152,8 +150,15 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             return
 
         if dest_currency is not None:
-            self.add_item(query, src_amount, src_currency, dest_currency)
+            item = self.create_item(src_amount, src_currency, dest_currency)
+            if item:
+                query.add(item)  # pyright: ignore[reportUnknownMemberType]
         else:
+            items: list[Item] = []
             for dest_currency in self.defaults_dests:
-                if dest_currency != src_currency:
-                    self.add_item(query, src_amount, src_currency, dest_currency)
+                if dest_currency == src_currency:
+                    continue
+                item = self.create_item(src_amount, src_currency, dest_currency)
+                if item:
+                    items.append(item)
+            query.add(items)  # pyright: ignore[reportUnknownMemberType]
