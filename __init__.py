@@ -16,11 +16,12 @@ from albert import (
     Query,
     StandardItem,
     TriggerQueryHandler,
+    makeImageIcon,
 )
 
 setClipboardText: Callable[[str], None]
 
-md_iid = '3.0'
+md_iid = '4.0'
 md_version = '1.4'
 md_name = 'Currency Converter Steven'
 md_description = 'Convert currencies'
@@ -28,7 +29,7 @@ md_license = 'MIT'
 md_url = 'https://github.com/stevenxxiu/albert_currency_converter_steven'
 md_authors = ['@stevenxxiu']
 
-ICON_URL = f'file:{Path(__file__).parent / "icons/currency.svg"}'
+ICON_PATH = Path(__file__).parent / 'icons/currency.svg'
 
 
 class EuropeanCentralBank:
@@ -124,7 +125,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 id=self.id(),
                 text=dest_amount_str,
                 subtext=f'Value of {src_amount:.2f} {src_currency} in {dest_currency}',
-                iconUrls=[ICON_URL],
+                icon_factory=lambda: makeImageIcon(ICON_PATH),
                 actions=[Action(md_name, md_name, lambda: setClipboardText(dest_amount_str))],
             )
         except ValueError:
