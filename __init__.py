@@ -122,11 +122,11 @@ class Plugin(PluginInstance, TriggerQueryHandler):
             dest_amount = european_central_bank.get_amount_in_dest_currency(src_amount, src_currency, dest_currency)
             dest_amount_str = f'{dest_amount:.2f} {dest_currency}'
             return StandardItem(
-                id=self.id(),
+                id=f'{src_currency},{dest_currency}',
                 text=dest_amount_str,
                 subtext=f'Value of {src_amount:.2f} {src_currency} in {dest_currency}',
                 icon_factory=lambda: makeImageIcon(ICON_PATH),
-                actions=[Action(md_name, md_name, lambda: setClipboardText(dest_amount_str))],
+                actions=[Action('copy', md_name, lambda: setClipboardText(dest_amount_str))],
             )
         except ValueError:
             pass
