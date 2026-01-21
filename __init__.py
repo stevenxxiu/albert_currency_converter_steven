@@ -1,6 +1,7 @@
 import io
 import json
 import urllib.request
+from collections.abc import Generator
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from http.client import HTTPResponse
@@ -11,18 +12,18 @@ from xml.etree import ElementTree as ET
 from albert import setClipboardText  # pyright: ignore[reportUnknownVariableType]
 from albert import (
     Action,
+    GeneratorQueryHandler,
+    Icon,
     Item,
     PluginInstance,
-    Query,
+    QueryContext,
     StandardItem,
-    TriggerQueryHandler,
-    makeImageIcon,
 )
 
 setClipboardText: Callable[[str], None]
 
-md_iid = '4.0'
-md_version = '1.4'
+md_iid = '5.0'
+md_version = '1.5'
 md_name = 'Currency Converter Steven'
 md_description = 'Convert currencies'
 md_license = 'MIT'
@@ -82,10 +83,10 @@ class CurrencyConverterSettings(TypedDict):
     defaults: list[str]
 
 
-class Plugin(PluginInstance, TriggerQueryHandler):
+class Plugin(PluginInstance, GeneratorQueryHandler):
     def __init__(self) -> None:
         PluginInstance.__init__(self)
-        TriggerQueryHandler.__init__(self)
+        GeneratorQueryHandler.__init__(self)
         # `{ alias: currency_name }`
         self.aliases: dict[str, str] = {}
         # `[currency_name]`
@@ -125,16 +126,16 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 id=f'{src_currency},{dest_currency}',
                 text=dest_amount_str,
                 subtext=f'Value of {src_amount:.2f} {src_currency} in {dest_currency}',
-                icon_factory=lambda: makeImageIcon(ICON_PATH),
+                icon_factory=lambda: Icon.image(ICON_PATH),
                 actions=[Action('copy', md_name, lambda: setClipboardText(dest_amount_str))],
             )
         except ValueError:
             pass
 
     @override
-    def handleTriggerQuery(self, query: Query) -> None:
+    def items(self, ctx: QueryContext) -> Generator[list[Item]]:
         try:
-            parts = query.string.split()
+            parts = ctx.query.split()
             match len(parts):
                 case 2:
                     src_amount, src_currency = parts
@@ -153,7 +154,7 @@ class Plugin(PluginInstance, TriggerQueryHandler):
         if dest_currency is not None:
             item = self.create_item(src_amount, src_currency, dest_currency)
             if item:
-                query.add(item)  # pyright: ignore[reportUnknownMemberType]
+                yield [item]
         else:
             items: list[Item] = []
             for dest_currency in self.defaults_dests:
@@ -162,4 +163,4 @@ class Plugin(PluginInstance, TriggerQueryHandler):
                 item = self.create_item(src_amount, src_currency, dest_currency)
                 if item:
                     items.append(item)
-            query.add(items)  # pyright: ignore[reportUnknownMemberType]
+            yield items
